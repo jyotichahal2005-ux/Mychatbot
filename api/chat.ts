@@ -9,6 +9,25 @@ type GroqResponse = {
   choices?: Array<{ message?: { content?: string } }>;
 };
 
+const PRIMARY_MODEL = "llama-3.3-70b-versatile";
+const FALLBACK_MODELS = ["openai/gpt-oss-20b", "openai/gpt-oss-120b", "llama-3.1-8b-instant"];
+
+function requestGroq(apiKey: string, model: string, messages: Array<{ role: "system" | "user" | "assistant"; content: string }>) {
+  return fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature: 0.45,
+      max_tokens: 450,
+    }),
+  });
+}
+
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -51,21 +70,20 @@ export default async function handler(request: Request): Promise<Response> {
   }
 
   try {
-    const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [{ role: "system", content: ZEDKING_SYSTEM_PROMPT }, ...messages.slice(-16)],
-        temperature: 0.45,
-        max_tokens: 450,
-      }),
-    });
+    const groqMessages = [{ role: "system" as const, content: ZEDKING_SYSTEM_PROMPT }, ...messages.slice(-16)];
+    let groqResponse = await requestGroq(apiKey, PRIMARY_MODEL, groqMessages);
+
+    if (groqResponse.status === 404) {
+      await groqResponse.text();
+      for (const fallbackModel of FALLBACK_MODELS) {
+        groqResponse = await requestGroq(apiKey, fallbackModel, groqMessages);
+        if (groqResponse.status !== 404) break;
+        await groqResponse.text();
+      }
+    }
 
     if (!groqResponse.ok) {
+      await groqResponse.text();
       return json({ error: "The assistant could not respond right now. Please try again or call the institute." }, 502);
     }
 

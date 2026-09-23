@@ -51,6 +51,7 @@ Professional bilingual AI chat assistant for Zed-King Group of Institute in Kait
 
 - Vercel builds use default Vite `PORT` and `BASE_PATH` values when Replit workflow variables are absent.
 - Add or change the assistant knowledge base in `shared/zedking-system-prompt.ts` so both runtimes stay aligned.
+- The requested `llama-3.3-70b-versatile` model may be unavailable for some Groq keys; the server retries current Groq production models before returning an error.
 
 ## Pointers
 
