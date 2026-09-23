@@ -2,6 +2,9 @@
   "extends": "./tsconfig.base.json",
   "compileOnSave": false,
   "files": [],
+  "compilerOptions": {
+    "lib": ["es2022", "dom", "dom.iterable"]
+  },
   "references": [
     {
       "path": "./lib/db"

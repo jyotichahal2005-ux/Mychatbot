@@ -1,5 +1,9 @@
 import { ZEDKING_SYSTEM_PROMPT } from "../shared/zedking-system-prompt";
 
+declare const process: {
+  env: Record<string, string | undefined>;
+};
+
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
