@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Zedking Assistant"
+description = "A professional AI chat assistant for Zed-King Group of Institute in Kaithal, helping students discover courses, fees, admissions, timings, and contact details in a warm bilingual experience."
+version = "1.0.0"
+id = "artifacts/zedking-assistant"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22837
+
+[services.development]
+run = "pnpm --filter @workspace/zedking-assistant run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/zedking-assistant", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/zedking-assistant/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22837"
+BASE_PATH = "/"

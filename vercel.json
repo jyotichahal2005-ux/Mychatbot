@@ -1,0 +1,5 @@
+{
+  "buildCommand": "pnpm --filter @workspace/zedking-assistant run build",
+  "outputDirectory": "artifacts/zedking-assistant/dist/public",
+  "installCommand": "pnpm install --frozen-lockfile"
+}

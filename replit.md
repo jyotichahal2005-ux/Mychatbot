@@ -1,6 +1,6 @@
-# [Project name]
+# Zedking Assistant
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Professional bilingual AI chat assistant for Zed-King Group of Institute in Kaithal, Haryana.
 
 ## Run & Operate
 
@@ -9,7 +9,7 @@ _Replace the heading above with the project's name, and this line with one sente
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Required env: `GROQ_API_KEY` — Groq API key for server-side chat requests
 
 ## Stack
 
@@ -22,23 +22,35 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/zedking-assistant/src/App.tsx` — responsive chat UI and generated chat hook integration
+- `artifacts/zedking-assistant/src/index.css` — Zed-King visual theme and responsive styling
+- `artifacts/api-server/src/routes/chat.ts` — Replit API route for `/api/chat`
+- `api/chat.ts` — Vercel serverless equivalent for `/api/chat`
+- `shared/zedking-system-prompt.ts` — canonical institute knowledge base and assistant behavior
+- `lib/api-spec/openapi.yaml` — source-of-truth chat contract and generated client schemas
+- `vercel.json` — Vercel build/output configuration
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The frontend uses the generated OpenAPI client hook so Replit preview and Vercel builds share the same `/api/chat` contract.
+- The Groq key is read only by server-side handlers; it is never exposed through Vite or client code.
+- The API has both a shared Express route for Replit and a Vercel function for zero-change deployment.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Students can ask about 20+ computer courses, fees, durations, admission, location, coaching, batch timings, and institute contact details.
+- The assistant supports English, Hindi, and natural Hinglish responses with a short, warm, enrollment-oriented tone.
+- The UI includes quick prompts, typing feedback, retry handling, mobile navigation, and a new-conversation reset.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Use Zed-King blue/orange brand cues and the name “Zedking Assistant”.
+- Keep the assistant warm, professional, concise, and sales-friendly.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Vercel builds use default Vite `PORT` and `BASE_PATH` values when Replit workflow variables are absent.
+- Add or change the assistant knowledge base in `shared/zedking-system-prompt.ts` so both runtimes stay aligned.
 
 ## Pointers
 

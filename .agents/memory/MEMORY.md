@@ -1,0 +1,1 @@
+- [Assistant runtime split](assistant-runtime.md) — keep Replit and Vercel chat handlers aligned through the shared prompt and server-only Groq key.
