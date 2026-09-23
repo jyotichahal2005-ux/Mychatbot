@@ -13,6 +13,18 @@ type GroqResponse = {
   choices?: Array<{ message?: { content?: string } }>;
 };
 
+type VercelRequest = {
+  method?: string;
+  body?: unknown;
+  on(event: "data" | "end" | "error", listener: (...args: unknown[]) => void): VercelRequest;
+};
+
+type VercelResponse = {
+  statusCode: number;
+  setHeader(name: string, value: string): VercelResponse;
+  end(body?: string): void;
+};
+
 const PRIMARY_MODEL = "llama-3.3-70b-versatile";
 const FALLBACK_MODELS = ["openai/gpt-oss-20b", "openai/gpt-oss-120b", "llama-3.1-8b-instant"];
 
@@ -32,28 +44,52 @@ function requestGroq(apiKey: string, model: string, messages: Array<{ role: "sys
   });
 }
 
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
+function sendJson(response: VercelResponse, data: unknown, status = 200) {
+  response.statusCode = status;
+  response.setHeader("Content-Type", "application/json");
+  response.end(JSON.stringify(data));
 }
 
-export default async function handler(request: Request): Promise<Response> {
+async function readRequestBody(request: VercelRequest): Promise<unknown> {
+  if (request.body !== undefined) {
+    return request.body;
+  }
+
+  let rawBody = "";
+  await new Promise<void>((resolve, reject) => {
+    request.on("data", (chunk) => {
+      if (typeof chunk === "string") {
+        rawBody += chunk;
+      } else if (chunk instanceof Uint8Array) {
+        rawBody += new TextDecoder().decode(chunk);
+      }
+    });
+    request.on("end", () => resolve());
+    request.on("error", (error) => reject(error));
+  });
+
+  return rawBody ? JSON.parse(rawBody) : {};
+}
+
+export default async function handler(request: VercelRequest, response: VercelResponse): Promise<void> {
   if (request.method !== "POST") {
-    return json({ error: "Method not allowed." }, 405);
+    response.setHeader("Allow", "POST");
+    sendJson(response, { error: "Method not allowed." }, 405);
+    return;
   }
 
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    return json({ error: "The assistant is temporarily unavailable. Please call the institute team." }, 503);
+    sendJson(response, { error: "The assistant is temporarily unavailable. Please call the institute team." }, 503);
+    return;
   }
 
   let body: { messages?: unknown };
   try {
-    body = (await request.json()) as { messages?: unknown };
+    body = (await readRequestBody(request)) as { messages?: unknown };
   } catch {
-    return json({ error: "Please send a valid chat message." }, 400);
+    sendJson(response, { error: "Please send a valid chat message." }, 400);
+    return;
   }
 
   const messages = Array.isArray(body.messages) ? body.messages : [];
@@ -70,7 +106,8 @@ export default async function handler(request: Request): Promise<Response> {
         (message as ChatMessage).content.length <= 4000,
     )
   ) {
-    return json({ error: "Please send a valid chat message." }, 400);
+    sendJson(response, { error: "Please send a valid chat message." }, 400);
+    return;
   }
 
   try {
@@ -88,17 +125,19 @@ export default async function handler(request: Request): Promise<Response> {
 
     if (!groqResponse.ok) {
       await groqResponse.text();
-      return json({ error: "The assistant could not respond right now. Please try again or call the institute." }, 502);
+      sendJson(response, { error: "The assistant could not respond right now. Please try again or call the institute." }, 502);
+      return;
     }
 
     const payload = (await groqResponse.json()) as GroqResponse;
     const message = payload.choices?.[0]?.message?.content?.trim();
     if (!message) {
-      return json({ error: "The assistant returned an empty response. Please try again." }, 502);
+      sendJson(response, { error: "The assistant returned an empty response. Please try again." }, 502);
+      return;
     }
 
-    return json({ message });
+    sendJson(response, { message });
   } catch {
-    return json({ error: "The assistant is having trouble connecting. Please try again shortly." }, 502);
+    sendJson(response, { error: "The assistant is having trouble connecting. Please try again shortly." }, 502);
   }
 }

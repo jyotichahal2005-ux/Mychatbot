@@ -14,3 +14,9 @@ Vercel type-checks the root `api/chat.ts` with the repository's root TypeScript 
 **Why:** The frontend bundle built successfully on Vercel, but deployment stopped during API type-checking because the root config exposed only `es2022` types.
 
 **How to apply:** When adding root Vercel functions, verify their globals against the root `tsconfig.json`; do not assume an artifact package's `tsconfig` applies to `api/*`.
+
+Vercel classifies this root API route as a Node serverless function, so its default export must accept `(req, res)` and write JSON through `res`; a fetch-style default export that returns `Response` can leave callers waiting.
+
+**Why:** Vercel logged that returned `Response` values were ignored, which caused the chat UI to remain on its typing state.
+
+**How to apply:** Keep the Vercel handler on the Node function signature unless the route is explicitly configured for a Web Handler runtime.
