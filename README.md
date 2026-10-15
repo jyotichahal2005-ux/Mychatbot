@@ -2,7 +2,8 @@
 
 A bilingual (Hindi + English) AI chatbot that answers student questions about courses, fees, admission, timings and location of Zed-King Group of Institute, Kaithal.
 
-![screenshot](IMAGE-LINK)
+
+<img src="https://github.com/user-attachments/assets/57862a08-8a74-4f85-8931-418e98279d4d" alt="Zedking Assistant" width="100%" />
 
 ## ✨ Features
 - Replies in English and Hindi
